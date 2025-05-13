@@ -1,23 +1,105 @@
--- scan nearest players and attack
-for _, plr in pairs(game:GetService('Players'):GetPlayers()) do
-    if plr.Character and plr.Character:FindFirstChild('HumanoidRootPart') and plr ~= game.Players.LocalPlayer then
-        local dist = (plr.Character.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-        if dist <= 10 then
-            -- attack logic
-            fireclickdetector(plr.Character.HumanoidRootPart.ClickDetector)
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/wall"))()
+local w = library:CreateWindow("Dead Rails")
+
+local run = game:GetService("RunService")
+local lp = game.Players.LocalPlayer
+local char = lp.Character or lp.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local workspace = game:GetService("Workspace")
+local replicated = game:GetService("ReplicatedStorage")
+local noclipEnabled = false
+local airweldVisible = false
+local autoKill = false
+local autoCollect = false
+local bringItem = false
+
+-- Noclip
+run.Stepped:Connect(function()
+    if noclipEnabled and char and char:FindFirstChildOfClass("Humanoid") then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") and part.CanCollide then
+                part.CanCollide = false
+            end
         end
     end
-end
+end)
 
-end
+-- Kill Aura
+run.RenderStepped:Connect(function()
+    if autoKill then
+        for _, plr in ipairs(game.Players:GetPlayers()) do
+            if plr ~= lp and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                local enemy = plr.Character
+                if (enemy.HumanoidRootPart.Position - hrp.Position).Magnitude < 12 then
+                    replicated.Combat:FireServer("m1", enemy)
+                end
+            end
+        end
+    end
+end)
 
--- Auto Collect Bonds Function Functions.CollectBonds = function() if not getgenv().AutoCollectBonds then return end for _, bond in pairs(workspace.Bonds:GetChildren()) do if bond:IsA('Folder') or bond:IsA('Model') then bond.PrimaryPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame end end end
+-- Auto Collect Bonds
+run.RenderStepped:Connect(function()
+    if autoCollect then
+        for _, bond in ipairs(workspace:GetChildren()) do
+            if bond.Name:lower():find("bond") and bond:IsA("Model") and bond:FindFirstChild("TouchInterest") then
+                firetouchinterest(hrp, bond, 0)
+                firetouchinterest(hrp, bond, 1)
+            end
+        end
+    end
+end)
 
--- AirWeld Function Functions.AirWeld = function() if not getgenv().AirWeldVisible then return end -- iterate attachments in workspace for _, part in pairs(workspace:GetDescendants()) do if part:IsA('BasePart') and part.Name:match('Weldable') then local weld = Instance.new('WeldConstraint', part) weld.Part0 = part weld.Part1 = workspace.Baseplate end end end
+-- Bring Items (drag near)
+run.RenderStepped:Connect(function()
+    if bringItem then
+        for _, obj in ipairs(workspace:GetChildren()) do
+            if obj:IsA("Model") and obj:FindFirstChild("Handle") and obj.Name ~= "HumanoidRootPart" then
+                pcall(function()
+                    obj:MoveTo(hrp.Position + Vector3.new(0, 2, 0))
+                end)
+            end
+        end
+    end
+end)
 
--- Bring Item Implementation Functions.BringItem = function(itemName) local item = workspace.Items:FindFirstChild(itemName) if item and item.PrimaryPart then item.PrimaryPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame end end
+-- Mostrar AirWeld
+run.RenderStepped:Connect(function()
+    if airweldVisible then
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("Weld") and v.Name == "AirWeld" and v.Part1 then
+                local billboard = Instance.new("BillboardGui", v.Part1)
+                billboard.Size = UDim2.new(0, 100, 0, 20)
+                billboard.AlwaysOnTop = true
+                local text = Instance.new("TextLabel", billboard)
+                text.Size = UDim2.new(1, 0, 1, 0)
+                text.Text = "AirWeld"
+                text.TextColor3 = Color3.new(1, 0, 0)
+                text.BackgroundTransparency = 1
+                wait(0.5)
+                billboard:Destroy()
+            end
+        end
+    end
+end)
 
--- Main Loop game:GetService('RunService').RenderStepped:Connect(function() Functions.KillAura() Functions.CollectBonds() Functions.AirWeld() end)
+-- UI Botones
+w:Toggle("Kill Aura", {flag = "kill"}, function(val)
+    autoKill = val
+end)
 
--- UI Settings (Save and Theme) local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu') MenuGroup:AddButton('Unload', function() Library:Unload() end) MenuGroup:AddLabel('Menu Keybind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Toggle UI' }) Library.ToggleKeybind = Options.MenuKeybind ThemeManager:SetLibrary(Library) SaveManager:SetLibrary(Library) ThemeManager:ApplyToTab(Tabs['UI Settings']) SaveManager:IgnoreThemeSettings() SaveManager:SetIgnoreIndexes({'MenuKeybind'}) SaveManager:SetFolder('Myleedeadrails') SaveManager:BuildConfigSection(Tabs['UI Settings']) SaveManager:LoadAutoloadConfig()
+w:Toggle("Auto Collect Bonds", {flag = "collect"}, function(val)
+    autoCollect = val
+end)
 
+w:Toggle("Bring Items", {flag = "bring"}, function(val)
+    bringItem = val
+end)
+
+w:Toggle("Airweld Visible", {flag = "air"}, function(val)
+    airweldVisible = val
+end)
+
+w:Toggle("Noclip", {flag = "noclip"}, function(val)
+    noclipEnabled = val
+end)
