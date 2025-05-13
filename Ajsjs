@@ -1,14 +1,23 @@
--- Myleedeadrails Script -- New example script written by wally, customized for Dead Rails
+-- scan nearest players and attack
+for _, plr in pairs(game:GetService('Players'):GetPlayers()) do
+    if plr.Character and plr.Character:FindFirstChild('HumanoidRootPart') and plr ~= game.Players.LocalPlayer then
+        local dist = (plr.Character.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+        if dist <= 10 then
+            -- attack logic
+            fireclickdetector(plr.Character.HumanoidRootPart.ClickDetector)
+        end
+    end
+end
 
-local repo = 'https://raw.githubusercontent.com/LionTheGreatRealFrFr/MobileLinoriaLib/main/' local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))() local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))() local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
+end
 
--- Create Window local Window = Library:CreateWindow({ Title = 'Myleedeadrails', Center = true, AutoShow = true, TabPadding = 8, MenuFadeTime = 0.2 })
+-- Auto Collect Bonds Function Functions.CollectBonds = function() if not getgenv().AutoCollectBonds then return end for _, bond in pairs(workspace.Bonds:GetChildren()) do if bond:IsA('Folder') or bond:IsA('Model') then bond.PrimaryPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame end end end
 
--- Tabs local Tabs = { Main = Window:AddTab('Main'), ['UI Settings'] = Window:AddTab('UI Settings'), }
+-- AirWeld Function Functions.AirWeld = function() if not getgenv().AirWeldVisible then return end -- iterate attachments in workspace for _, part in pairs(workspace:GetDescendants()) do if part:IsA('BasePart') and part.Name:match('Weldable') then local weld = Instance.new('WeldConstraint', part) weld.Part0 = part weld.Part1 = workspace.Baseplate end end end
 
--- Main Groupbox local MainGroup = Tabs.Main:AddLeftGroupbox('Features')
+-- Bring Item Implementation Functions.BringItem = function(itemName) local item = workspace.Items:FindFirstChild(itemName) if item and item.PrimaryPart then item.PrimaryPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame end end
 
--- Kill Aura Toggle MainGroup:AddToggle('KillAura', { Text = 'Kill Aura', Default = false, Tooltip = 'Automatically attack nearby players', Callback = function(val) getgenv().KillAuraEnabled = val end })
+-- Main Loop game:GetService('RunService').RenderStepped:Connect(function() Functions.KillAura() Functions.CollectBonds() Functions.AirWeld() end)
 
--- Auto Collect Bonds Toggle MainGroup:AddToggle('AutoCollect', { Text = 'Auto Collect Bonds', Default = false, Tooltip = 'Collect all bonds automatically', Callback = function(val) getgenv().
+-- UI Settings (Save and Theme) local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu') MenuGroup:AddButton('Unload', function() Library:Unload() end) MenuGroup:AddLabel('Menu Keybind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Toggle UI' }) Library.ToggleKeybind = Options.MenuKeybind ThemeManager:SetLibrary(Library) SaveManager:SetLibrary(Library) ThemeManager:ApplyToTab(Tabs['UI Settings']) SaveManager:IgnoreThemeSettings() SaveManager:SetIgnoreIndexes({'MenuKeybind'}) SaveManager:SetFolder('Myleedeadrails') SaveManager:BuildConfigSection(Tabs['UI Settings']) SaveManager:LoadAutoloadConfig()
 
